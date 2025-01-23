@@ -442,7 +442,7 @@ class RolloutBuffer(BaseBuffer):
         elif recursive_type == "max":
             print("max")
             last_gae_lam = 0
-            max_value = -float("inf")
+            max_value = -9999
 
             for step in reversed(range(self.buffer_size)):
                 if step == self.buffer_size - 1:
@@ -454,6 +454,26 @@ class RolloutBuffer(BaseBuffer):
 
                 max_value = max(self.rewards[step], self.gamma * next_values * next_non_terminal)
                 delta = max_value - self.values[step]
+                last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
+                self.advantages[step] = last_gae_lam
+
+            self.returns = self.advantages + self.values
+
+        elif recursive_type == "min":
+            print("min")
+            last_gae_lam = 0
+            min_value = 9999
+
+            for step in reversed(range(self.buffer_size)):
+                if step == self.buffer_size - 1:
+                    next_non_terminal = 1.0 - dones.astype(np.float32)
+                    next_values = last_values
+                else:
+                    next_non_terminal = 1.0 - self.episode_starts[step + 1]
+                    next_values = self.values[step + 1]
+
+                min_value = min(self.rewards[step], self.gamma * next_values * next_non_terminal)
+                delta = min_value - self.values[step]
                 last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
                 self.advantages[step] = last_gae_lam
 

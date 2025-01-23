@@ -468,6 +468,7 @@ class RolloutBuffer(BaseBuffer):
 
             self.returns = self.advantages + self.values
 
+
         elif recursive_type == "extended_max":
             print("extended_max")
             last_gae_lam = 0
@@ -489,7 +490,31 @@ class RolloutBuffer(BaseBuffer):
 
             self.returns = self.advantages + self.values
 
+        elif recursive_type == "extended_max_new":
+            print("extended_max_new")
+            returns = np.zeros_like(self.rewards)
+            buffer_size = self.buffer_size
 
+            for t in range(buffer_size):  # 遍历每个时间步
+                max_value = -float("inf")
+                factor = self.gamma
+                lambda_factor = 1.0
+
+                for n in range(0, buffer_size - t):  # 计算所有 n-step return
+                    extend_state_next = max(self.extend_state[t + n], self.rewards[t + n])
+                    v_t_n = factor * self.values[t + n]
+
+                    if self.episode_starts[t + n] or t + n == buffer_size - 1:
+                        returns[t] += lambda_factor * v_t_n
+                        break
+                    else:
+                        returns[t] += (1 - self.gae_lambda) * lambda_factor * v_t_n
+                        factor *= self.gamma
+                        lambda_factor *= self.gae_lambda
+
+                returns[t] = max(extend_state_next, returns[t])
+
+            self.returns = returns
 
     def add(
         self,
@@ -532,9 +557,9 @@ class RolloutBuffer(BaseBuffer):
 
         # extend state: max
         if self.episode_starts[self.pos]:
-            self.extend_state[self.pos] = reward
+            self.extend_state[self.pos] = 0
         else:
-            self.extend_state[self.pos] = max(reward, self.extend_state[self.pos - 1]) / self.gamma
+            self.extend_state[self.pos] = max(self.rewards[self.pos - 1], self.extend_state[self.pos - 1])
 
         self.pos += 1
         if self.pos == self.buffer_size:

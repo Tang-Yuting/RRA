@@ -8,7 +8,7 @@ import torch as th
 from gymnasium import spaces
 
 from stable_baselines3.common.max_base_class import BaseAlgorithm
-from stable_baselines3.common.buffers import DictRolloutBuffer, RolloutBuffer
+from stable_baselines3.common.max_buffers import DictRolloutBuffer, RolloutBuffer
 from stable_baselines3.common.callbacks import BaseCallback
 from stable_baselines3.common.policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
@@ -235,7 +235,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 # Reshape in case of discrete action
                 actions = actions.reshape(-1, 1)
 
-            new_extend_state = np.maximum(rewards, self.gamma * self._last_extend_state)
+            new_extend_state = np.maximum(rewards, self._last_extend_state)
 
             # Handle timeout by bootstrapping with value function
             # see GitHub issue #633

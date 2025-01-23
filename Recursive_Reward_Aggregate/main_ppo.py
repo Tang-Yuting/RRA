@@ -12,7 +12,7 @@ env = gym.make("CartPole-v1", render_mode="rgb_array")
 env = Monitor(env)
 
 model = PPO("MlpPolicy", env, verbose=1, learning_rate=0.0003,
-            n_steps=2048, batch_size=64, gamma=0.99, recursive_type="max")
+            n_steps=2048, batch_size=64, gamma=0.99, recursive_type="min")
 
 model.learn(total_timesteps=100000)
 
