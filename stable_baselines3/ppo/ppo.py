@@ -105,6 +105,7 @@ class PPO(OnPolicyAlgorithm):
         seed: Optional[int] = None,
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
+        recursive_type: str = "sum",
     ):
         super().__init__(
             policy,
@@ -127,6 +128,7 @@ class PPO(OnPolicyAlgorithm):
             device=device,
             seed=seed,
             _init_setup_model=False,
+            recursive_type=recursive_type,
             supported_action_spaces=(
                 spaces.Box,
                 spaces.Discrete,
@@ -242,6 +244,11 @@ class PPO(OnPolicyAlgorithm):
                     )
                 # Value loss using the TD(gae_lambda) target
                 value_loss = F.mse_loss(rollout_data.returns, values_pred)
+                # if self.recursive_type == "sum":
+                #     value_loss = F.mse_loss(rollout_data.returns, values_pred)  # TYT: sum
+                # elif self.recursive_type == "max":
+                #     value_loss = F.mse_loss(rollout_data.max_returns, values_pred)  # TYT: max
+
                 value_losses.append(value_loss.item())
 
                 # Entropy loss favor exploration

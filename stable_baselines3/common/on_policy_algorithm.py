@@ -82,6 +82,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         device: Union[th.device, str] = "auto",
         _init_setup_model: bool = True,
         supported_action_spaces: Optional[tuple[type[spaces.Space], ...]] = None,
+        recursive_type: str = "sum",
     ):
         super().__init__(
             policy=policy,
@@ -108,6 +109,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
         self.max_grad_norm = max_grad_norm
         self.rollout_buffer_class = rollout_buffer_class
         self.rollout_buffer_kwargs = rollout_buffer_kwargs or {}
+        self.recursive_type = recursive_type
 
         if _init_setup_model:
             self._setup_model()
@@ -259,7 +261,8 @@ class OnPolicyAlgorithm(BaseAlgorithm):
             # Compute value for the last timestep
             values = self.policy.predict_values(obs_as_tensor(new_obs, self.device))  # type: ignore[arg-type]
 
-        rollout_buffer.compute_returns_and_advantage(last_values=values, dones=dones)
+
+        rollout_buffer.compute_returns_and_advantage(last_values=values, dones=dones, recursive_type=self.recursive_type)
 
         callback.update_locals(locals())
 

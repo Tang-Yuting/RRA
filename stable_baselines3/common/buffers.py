@@ -400,7 +400,7 @@ class RolloutBuffer(BaseBuffer):
         self.generator_ready = False
         super().reset()
 
-    def compute_returns_and_advantage(self, last_values: th.Tensor, dones: np.ndarray) -> None:
+    def compute_returns_and_advantage(self, last_values: th.Tensor, dones: np.ndarray, recursive_type: Any) -> None:
         """
         Post-processing step: compute the lambda-return (TD(lambda) estimate)
         and GAE(lambda) advantage.
@@ -422,20 +422,43 @@ class RolloutBuffer(BaseBuffer):
         # Convert to numpy
         last_values = last_values.clone().cpu().numpy().flatten()  # type: ignore[assignment]
 
-        last_gae_lam = 0
-        for step in reversed(range(self.buffer_size)):
-            if step == self.buffer_size - 1:
-                next_non_terminal = 1.0 - dones.astype(np.float32)
-                next_values = last_values
-            else:
-                next_non_terminal = 1.0 - self.episode_starts[step + 1]
-                next_values = self.values[step + 1]
-            delta = self.rewards[step] + self.gamma * next_values * next_non_terminal - self.values[step]
-            last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
-            self.advantages[step] = last_gae_lam
-        # TD(lambda) estimator, see Github PR #375 or "Telescoping in TD(lambda)"
-        # in David Silver Lecture 4: https://www.youtube.com/watch?v=PnHCvfgC_ZA
-        self.returns = self.advantages + self.values
+        if recursive_type == "sum":
+            print("sum")
+            last_gae_lam = 0
+            for step in reversed(range(self.buffer_size)):
+                if step == self.buffer_size - 1:
+                    next_non_terminal = 1.0 - dones.astype(np.float32)
+                    next_values = last_values
+                else:
+                    next_non_terminal = 1.0 - self.episode_starts[step + 1]
+                    next_values = self.values[step + 1]
+                delta = self.rewards[step] + self.gamma * next_values * next_non_terminal - self.values[step]
+                last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
+                self.advantages[step] = last_gae_lam
+            # TD(lambda) estimator, see Github PR #375 or "Telescoping in TD(lambda)"
+            # in David Silver Lecture 4: https://www.youtube.com/watch?v=PnHCvfgC_ZA
+            self.returns = self.advantages + self.values
+
+        elif recursive_type == "max":
+            print("max")
+            last_gae_lam = 0
+            max_value = -float("inf")
+
+            for step in reversed(range(self.buffer_size)):
+                if step == self.buffer_size - 1:
+                    next_non_terminal = 1.0 - dones.astype(np.float32)
+                    next_values = last_values
+                else:
+                    next_non_terminal = 1.0 - self.episode_starts[step + 1]
+                    next_values = self.values[step + 1]
+
+                max_value = max(self.rewards[step], self.gamma * next_values * next_non_terminal)
+                delta = max_value - self.values[step]
+                last_gae_lam = delta + self.gamma * self.gae_lambda * next_non_terminal * last_gae_lam
+                self.advantages[step] = last_gae_lam
+
+            self.returns = self.advantages + self.values
+
 
     def add(
         self,

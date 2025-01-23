@@ -5,7 +5,7 @@ import copy
 import warnings
 from abc import ABC, abstractmethod
 from functools import partial
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Optional, TypeVar, Union, Callable, Tuple
 
 import numpy as np
 import torch as th
@@ -744,7 +744,7 @@ class ActorCriticPolicy(BasePolicy):
         """
         Get the current policy distribution given the observations.
 
-        :param obs:
+        :param obs: Observation
         :return: the action distribution.
         """
         features = super().extract_features(obs, self.pi_features_extractor)

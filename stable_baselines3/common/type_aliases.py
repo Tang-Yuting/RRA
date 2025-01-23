@@ -28,6 +28,17 @@ PyTorchObs = Union[th.Tensor, TensorDict]
 Schedule = Callable[[float], float]
 
 
+class MAXRolloutBufferSamples(NamedTuple):
+    observations: th.Tensor
+    actions: th.Tensor
+    old_values: th.Tensor
+    old_log_prob: th.Tensor
+    advantages: th.Tensor
+    returns: th.Tensor
+    extend_state: th.Tensor
+    # max_returns: th.Tensor
+
+
 class RolloutBufferSamples(NamedTuple):
     observations: th.Tensor
     actions: th.Tensor
@@ -44,6 +55,7 @@ class DictRolloutBufferSamples(NamedTuple):
     old_log_prob: th.Tensor
     advantages: th.Tensor
     returns: th.Tensor
+    # max_returns: th.Tensor
 
 
 class ReplayBufferSamples(NamedTuple):
