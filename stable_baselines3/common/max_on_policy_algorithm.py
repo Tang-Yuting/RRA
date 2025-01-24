@@ -10,7 +10,7 @@ from gymnasium import spaces
 from stable_baselines3.common.max_base_class import BaseAlgorithm
 from stable_baselines3.common.max_buffers import DictRolloutBuffer, RolloutBuffer
 from stable_baselines3.common.callbacks import BaseCallback
-from stable_baselines3.common.policies import ActorCriticPolicy
+from stable_baselines3.common.max_policies import ActorCriticPolicy
 from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedule
 from stable_baselines3.common.utils import obs_as_tensor, safe_mean
 from stable_baselines3.common.vec_env import VecEnv
@@ -235,6 +235,7 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                 # Reshape in case of discrete action
                 actions = actions.reshape(-1, 1)
 
+            # new_extend_state = np.maximum(rewards, self._last_extend_state) / self.gamma
             new_extend_state = np.maximum(rewards, self._last_extend_state)
 
             # Handle timeout by bootstrapping with value function
@@ -250,13 +251,15 @@ class OnPolicyAlgorithm(BaseAlgorithm):
                     with th.no_grad():
                         terminal_value = self.policy.predict_values(terminal_obs, terminal_extend_state)[0]  # type: ignore[arg-type]
                     rewards[idx] += self.gamma * terminal_value
+                    new_extend_state[idx] = 0
 
             rollout_buffer.add(
                 self._last_obs,  # type: ignore[arg-type]
                 actions,
                 rewards,
+                self._last_extend_state,
                 self._last_episode_starts,  # type: ignore[arg-type]
-                values,
+                values,  # TYT: according to the ToTheMax code, we do not use it. We should calculate it again in GAE estimation.
                 log_probs,
             )
             self._last_obs = new_obs  # type: ignore[assignment]
@@ -265,10 +268,9 @@ class OnPolicyAlgorithm(BaseAlgorithm):
 
         with th.no_grad():
             # Compute value for the last timestep
-            values = self.policy.predict_values(obs_as_tensor(new_obs, self.device), th.as_tensor(self._last_extend_state, device=self.device))  # type: ignore[arg-type]
+            values = self.policy.predict_values(obs_as_tensor(new_obs, self.device), th.as_tensor(new_extend_state, device=self.device))  # type: ignore[arg-type]
 
-
-        rollout_buffer.compute_returns_and_advantage(last_values=values, dones=dones, recursive_type=self.recursive_type)
+        rollout_buffer.compute_returns_and_advantage(policy=self.policy, last_values=values, dones=dones, recursive_type=self.recursive_type)
 
         callback.update_locals(locals())
 

@@ -11,7 +11,7 @@ import numpy as np
 env = gym.make("CartPole-v1", render_mode="rgb_array")
 env = Monitor(env)
 
-model = MAX_PPO("CustomActorCriticPolicy", env, verbose=1, learning_rate=0.000001,
+model = MAX_PPO("CustomActorCriticPolicy", env, verbose=1, learning_rate=0.0001,
             n_steps=2048, batch_size=64, gamma=0.99, recursive_type="extended_max_new")
 
 model.learn(total_timesteps=100000)

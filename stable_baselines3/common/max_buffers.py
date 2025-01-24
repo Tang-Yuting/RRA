@@ -409,7 +409,7 @@ class RolloutBuffer(BaseBuffer):
         self.generator_ready = False
         super().reset()
 
-    def compute_returns_and_advantage(self, last_values: th.Tensor, dones: np.ndarray, recursive_type: Any) -> None:
+    def compute_returns_and_advantage(self, policy, last_values: th.Tensor, dones: np.ndarray, recursive_type: Any) -> None:
         """
         Post-processing step: compute the lambda-return (TD(lambda) estimate)
         and GAE(lambda) advantage.
@@ -496,13 +496,15 @@ class RolloutBuffer(BaseBuffer):
             buffer_size = self.buffer_size
 
             for t in range(buffer_size):  # 遍历每个时间步
-                max_value = -float("inf")
+                max_value = 0
                 factor = self.gamma
                 lambda_factor = 1.0
 
                 for n in range(0, buffer_size - t):  # 计算所有 n-step return
                     extend_state_next = max(self.extend_state[t + n], self.rewards[t + n])
-                    v_t_n = factor * self.values[t + n]
+                    # v_t_n = factor * self.values[t + n]
+                    v_t_n = factor * policy.predict_values(th.as_tensor(self.observations[t + n], device=self.device), th.as_tensor(extend_state_next / factor, device=self.device))
+                    v_t_n = v_t_n.clone().cpu().detach().numpy().flatten()
 
                     if self.episode_starts[t + n] or t + n == buffer_size - 1:
                         returns[t] += lambda_factor * v_t_n
@@ -521,7 +523,7 @@ class RolloutBuffer(BaseBuffer):
         obs: np.ndarray,
         action: np.ndarray,
         reward: np.ndarray,
-        # extend_state: np.ndarray,
+        extend_state: np.ndarray,
         episode_start: np.ndarray,
         value: th.Tensor,
         log_prob: th.Tensor,
@@ -556,10 +558,7 @@ class RolloutBuffer(BaseBuffer):
         self.log_probs[self.pos] = log_prob.clone().cpu().numpy()
 
         # extend state: max
-        if self.episode_starts[self.pos]:
-            self.extend_state[self.pos] = 0
-        else:
-            self.extend_state[self.pos] = max(self.rewards[self.pos - 1], self.extend_state[self.pos - 1])
+        self.extend_state[self.pos] = np.array(extend_state)
 
         self.pos += 1
         if self.pos == self.buffer_size:
