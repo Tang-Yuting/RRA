@@ -1,6 +1,7 @@
 # Recursive Reward Aggregation (RRA)
 
 Code for Recursive Reward Aggregation.
+Built upon Stable-Baselines3.
 
 
 ## Videos for continuous control experiments
@@ -56,13 +57,27 @@ Code for Recursive Reward Aggregation.
 
 ## Running Experiments
 
-### Continuous control
+### Gird-world environment
+The `gird-world` environment can be executed directly using the Jupyter Notebook **`grid.ipynb`**.
+```sh
+cd grid
+jupyter notebook grid.ipynb
+```
+
+### Wind environment
+The `wind` environment can be executed directly using the Jupyter Notebook **`wind.ipynb`**.
+```sh
+cd wind
+jupyter notebook wind.ipynb
+```
+
+### Continuous control experiment
 ```sh
 cd continuous_control
 ./run_td3.sh
 ```
 
-### Portfolio
+### Portfolio experiment
 ```sh
 cd portfolio
 ./run_portfolio.sh
