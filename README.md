@@ -60,7 +60,7 @@ Built upon Stable-Baselines3.
 ### Gird-world environment
 The `gird-world` environment can be executed directly using the Jupyter Notebook **`grid.ipynb`**.
 ```sh
-cd grid
+cd grid_world
 jupyter notebook grid.ipynb
 ```
 
