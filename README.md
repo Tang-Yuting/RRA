@@ -56,6 +56,17 @@ Code for Recursive Reward Aggregation.
 
 ## Running Experiments
 
+### Continuous control
+```sh
+cd continuous_control
+./run_td3.sh
+```
+
+### Portfolio
+```sh
+cd portfolio
+./run_portfolio.sh
+```
 
 
 ## Running with Docker
